@@ -56,7 +56,7 @@ export default function Layout({ children }: LayoutProps) {
                             className="flex items-center"
                         >
                             <img
-                                src="/assets/agnitian_removebg.png"
+                                src="../image/agnitian_removebg.png"
                                 alt="Agnitian Logo"
                                 className="w-30 h-16 object-contain"
                             />
