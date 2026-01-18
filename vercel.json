@@ -1,22 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "builds": [
+  "framework": "vite",
+  "rewrites": [
     {
-      "src": "dist",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/assets/.*",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/.*",
-      "dest": "/index.html"
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
     }
   ]
 }
