@@ -6,6 +6,7 @@ import About from './pages/About'
 import Products from './pages/product'
 import Solutions from './pages/Solutions'
 import Blog from './pages/Blog'
+import BlogPost from './pages/BlogPost.tsx'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/products" element={<Products />} />
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:id" element={<BlogPost />} />
         </Routes>
       </Layout>
     </Router>

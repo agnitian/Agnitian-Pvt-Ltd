@@ -1,20 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, ArrowRight, Search } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/Components/ui/button';
-import { blogs, blogCategories } from '@/lib/description';
+import type { Blog } from '@/lib/blogApi';
+import { fetchBlogs, fetchCategories } from '@/lib/blogApi';
+
+const defaultCategories = [
+    { id: 'all', label: 'All Articles' },
+    { id: 'AI', label: 'AI' },
+    { id: 'Technology', label: 'Technology' },
+    { id: 'Business', label: 'Business' },
+    { id: 'Web Development', label: 'Web Development' },
+    { id: 'Tutorial', label: 'Tutorial' },
+    { id: 'News', label: 'News' }
+];
 
 export default function Blog() {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [blogs, setBlogs] = useState<Blog[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAll, setShowAll] = useState(false);
+    const [blogCategories] = useState(defaultCategories);
 
-    const filteredBlogs = blogs.filter(blog => {
-        const matchCategory = selectedCategory === 'all' || blog.category.toLowerCase().includes(selectedCategory);
-        const matchSearch = blog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            blog.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            blog.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchCategory && matchSearch;
-    });
+    // Fetch blogs on component mount and when category/search changes
+    useEffect(() => {
+        const loadBlogs = async () => {
+            try {
+                setLoading(true);
+                const response = await fetchBlogs({
+                    category: selectedCategory !== 'all' ? selectedCategory : undefined,
+                    search: searchQuery || undefined,
+                    limit: 1000
+                });
+                setBlogs(response.data || []);
+            } catch (error) {
+                console.error('Error loading blogs:', error);
+                setBlogs([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadBlogs();
+    }, [selectedCategory, searchQuery]);
+
+    const filteredBlogs = blogs;
 
     return (
         <div className="min-h-screen bg-white">
@@ -82,23 +114,36 @@ export default function Blog() {
                     </div>
 
                     {/* Blog Grid */}
+                    {loading ? (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                            {Array.from({ length: 6 }).map((_, idx) => (
+                                <div key={idx} className="rounded-2xl border border-slate-200 bg-white h-96 animate-pulse" />
+                            ))}
+                        </div>
+                    ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                        {filteredBlogs.map((blog, idx) => (
+                        {filteredBlogs.slice(0, showAll ? filteredBlogs.length : 6).map((blog, idx) => (
+                            <Link key={blog._id} to={`/blog/${blog._id}`} className="no-underline block">
                             <motion.article
-                                key={blog.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: idx * 0.1 }}
-                                className="group relative rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-500 flex flex-col"
+                                className="group relative rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-xl hover:shadow-blue-100/50 transition-all duration-500 flex flex-col h-full cursor-pointer"
                             >
                                 {/* Image */}
                                 <div className="relative h-48 overflow-hidden bg-slate-200">
-                                    <img
-                                        src={blog.image}
-                                        alt={blog.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                    />
+                                    {blog.image ? (
+                                        <img
+                                            src={blog.image}
+                                            alt={blog.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                            <span className="text-white text-sm font-medium opacity-50">No image</span>
+                                        </div>
+                                    )}
                                     <div className="absolute top-4 left-4">
                                         <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
                                             {blog.category}
@@ -120,12 +165,18 @@ export default function Blog() {
                                     <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-4">
                                         <div className="flex items-center gap-1">
                                             <Calendar className="w-4 h-4" />
-                                            {blog.date}
+                                            {new Date(blog.createdAt).toLocaleDateString('en-US', { 
+                                                year: 'numeric', 
+                                                month: 'short', 
+                                                day: 'numeric' 
+                                            })}
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <Clock className="w-4 h-4" />
-                                            {blog.readTime}
-                                        </div>
+                                        {blog.readTime && (
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4" />
+                                                {blog.readTime} min read
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Tags */}
@@ -143,14 +194,17 @@ export default function Blog() {
                                     </div>
 
                                     {/* Read More Button */}
-                                    <button className="mt-auto inline-flex items-center gap-2 text-blue-600 font-semibold text-sm group-hover:gap-3 transition-all">
+                                    <div className="mt-auto inline-flex items-center gap-2 text-blue-600 font-semibold text-sm group-hover:gap-3 transition-all">
                                         Read Article
                                         <ArrowRight className="w-4 h-4" />
-                                    </button>
+                                    </div>
                                 </div>
                             </motion.article>
+                            </Link>
                         ))}
                     </div>
+                    )}
+
 
                     {/* No Results */}
                     {filteredBlogs.length === 0 && (
@@ -172,20 +226,23 @@ export default function Blog() {
                         </motion.div>
                     )}
 
-                    {/* See All Blog Button */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="flex justify-center mt-16"
-                    >
-                        <Button
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg flex items-center gap-2 rounded-xl"
+                    {/* See All Blog Button - Show only if not already showing all */}
+                    {!showAll && filteredBlogs.length > 6 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="flex justify-center mt-16"
                         >
-                            See All Blogs
-                            <ArrowRight className="w-5 h-5" />
-                        </Button>
-                    </motion.div>
+                            <Button
+                                onClick={() => setShowAll(true)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg flex items-center gap-2 rounded-xl"
+                            >
+                                See All Blogs
+                                <ArrowRight className="w-5 h-5" />
+                            </Button>
+                        </motion.div>
+                    )}
                 </div>
             </section>
 
