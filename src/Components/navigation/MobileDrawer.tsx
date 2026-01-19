@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/lib/utils';
-import { X, ChevronRight, ChevronDown, MessageSquare } from 'lucide-react';
+import { X, ChevronRight, MessageSquare } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 
-const navItems = [
-    { title: 'Home', href: 'Home' },
-    { title: 'Products', href: 'Products' },
-    { title: 'Solutions', href: 'Solutions' },
-    { title: 'About', href: 'About' }
-];
+const navItems = ['Home', 'Products', 'Solutions', 'Blogs', 'About'];
 
-export default function MobileDrawer({ isOpen, onClose, onOpenContact }) {
+interface MobileDrawerProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onOpenContact: () => void;
+}
+
+export default function MobileDrawer({ isOpen, onClose, onOpenContact }: MobileDrawerProps) {
+    useEffect(() => {
+        if (!isOpen) return;
+        function handleKey(e: KeyboardEvent) {
+            if (e.key === 'Escape') onClose();
+        }
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [isOpen, onClose]);
     return (
         <AnimatePresence>
             {isOpen && (
@@ -31,6 +40,9 @@ export default function MobileDrawer({ isOpen, onClose, onOpenContact }) {
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white z-50 flex flex-col"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Mobile menu"
                     >
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
                             <span className="text-xl font-bold text-slate-900">AGNITIAN</span>
@@ -43,14 +55,14 @@ export default function MobileDrawer({ isOpen, onClose, onOpenContact }) {
                         </div>
 
                         <nav className="flex-1 overflow-y-auto py-6">
-                            {navItems.map((item, idx) => (
+                            {navItems.map((item) => (
                                 <Link
-                                    key={idx}
-                                    to={createPageUrl(item.href)}
+                                    key={item}
+                                    to={createPageUrl(item)}
                                     onClick={onClose}
                                     className="flex items-center justify-between px-6 py-4 text-lg font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all"
                                 >
-                                    {item.title}
+                                    {item}
                                     <ChevronRight className="w-5 h-5 text-slate-400" />
                                 </Link>
                             ))}
