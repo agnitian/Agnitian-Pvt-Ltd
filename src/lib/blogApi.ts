@@ -1,5 +1,5 @@
 // API configuration
-const API_BASE_URL = 'https://agnitian-backend-git-main-agnitian-pvt-ltds-projects.vercel.app/api/blogs';
+const API_BASE_URL = 'https://agnitian-backend.vercel.app/api/blogs';
 
 // Type definitions matching backend
 export interface Blog {
